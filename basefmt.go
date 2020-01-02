@@ -29,5 +29,9 @@ func (bf *baseFmt) addWithCarry(a, b int) (int, int) {
 }
 
 func (bf *baseFmt) subtractWithBorrow(a, b int) (int, int) {
-	return bf.addWithCarry(a, bf.max-bf.min-a+1)
+	if a < b {
+		return b - a + bf.min, 0
+	}
+
+	return bf.addWithCarry(a, bf.max-bf.min-b+1)
 }

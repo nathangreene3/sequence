@@ -27,16 +27,16 @@ func TestInts(t *testing.T) {
 }
 
 func TestAddSubtract(t *testing.T) {
-	its := newInts(newFormat(newBaseFmt(1, 3), newBaseFmt(2, 3)))
+	its := newInts(newFormat(newBaseFmt(0, 3), newBaseFmt(0, 3)))
 	fmt.Printf("%v\n", its.current)
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 6; i++ {
 		its.increment()
 		fmt.Printf("%v\n", its.current)
 	}
 
 	fmt.Println()
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 6; i++ {
 		its.decrement()
 		fmt.Printf("%v\n", its.current)
 	}

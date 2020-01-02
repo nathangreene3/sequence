@@ -81,7 +81,7 @@ func (its *ints) increment() {
 	for _, index := range its.indQueue {
 		its.current[index], carry = its.format[index].addWithCarry(its.current[index], carry)
 		if its.current[index] == its.format[index].max {
-			if count++; count == lenOrd {
+			if count++; count == lenOrd && 0 < carry {
 				its.overflowed = true
 			}
 		}
@@ -98,6 +98,7 @@ func (its *ints) decrement() {
 
 	for _, index := range its.indQueue {
 		its.current[index], borrow = its.format[index].subtractWithBorrow(its.current[index], borrow)
+
 		if its.current[index] == its.format[index].min {
 			if count++; count == lenOrd {
 				its.underflowed = true
