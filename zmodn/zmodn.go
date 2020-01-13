@@ -48,12 +48,31 @@ func (z *zInt) subtractWithBorrow(x int) int {
 
 // addWithCarry returns (a+b) mod (modulus) with the carried amount.
 func addWithCarry(a, b, modulus int) (int, int) {
-	c := a + b
-	return c % modulus, c / modulus
+	var (
+		ka, ra = euclidsCoeffs(a, modulus)
+		kb, rb = euclidsCoeffs(b, modulus)
+		k, r   = euclidsCoeffs(ra+rb, modulus)
+	)
+
+	return r, ka + kb + k
 }
 
 // subtractWithBorrow ...
 func subtractWithBorrow(a, b, modulus int) (int, int) {
-	c := (a + modulus - b) % modulus
-	return c, (a+modulus-b-c)/modulus - 1
+	var (
+		ka, ra = euclidsCoeffs(a, modulus)
+		kb, rb = euclidsCoeffs(b, modulus)
+		k, r   = euclidsCoeffs(ra-rb, modulus)
+	)
+
+	return r, -k - ka - kb
+}
+
+func euclidsCoeffs(x, modulus int) (k int, r int) {
+	if modulus == 0 {
+		panic("")
+	}
+
+	r = (x%modulus + modulus) % modulus
+	return (x - r) / modulus, r
 }
