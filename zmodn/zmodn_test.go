@@ -1,15 +1,19 @@
 package zmodn
 
 import (
-	"fmt"
 	"testing"
 )
+
+func TestZIntAddWithCarry(t *testing.T) {
+
+}
 
 func TestAddSubtract(t *testing.T) {
 	tests := []struct {
 		x, y, n, answer, carry, borrow int
 		subtract                       bool
 	}{
+		// 0 < x
 		{
 			x:      5,
 			y:      4,
@@ -37,7 +41,39 @@ func TestAddSubtract(t *testing.T) {
 			y:        -4,
 			n:        6,
 			answer:   3,
-			borrow:   -1, // What should be borrowed?
+			borrow:   -1,
+			subtract: true,
+		},
+
+		// x < 0
+		{
+			x:      -5,
+			y:      4,
+			n:      6,
+			answer: 5,
+			carry:  -1,
+		},
+		{
+			x:      -5,
+			y:      -4,
+			n:      6,
+			answer: 3,
+			carry:  -2,
+		},
+		{
+			x:        -5,
+			y:        4,
+			n:        6,
+			answer:   3,
+			borrow:   2,
+			subtract: true,
+		},
+		{
+			x:        -5,
+			y:        -4,
+			n:        6,
+			answer:   5,
+			borrow:   1,
 			subtract: true,
 		},
 	}
@@ -55,26 +91,6 @@ func TestAddSubtract(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestZIntAddWithCarry(t *testing.T) {
-	n := 3
-	z := newZInt(0, n)
-
-	fmt.Printf("z = %d\n", z.value)
-	for x := 0; x < 2*n; x++ {
-		oldZ := z.value
-		c := z.addWithCarry(x)
-		fmt.Printf("%d + %d --> %d,  carry: %d\n", oldZ, x, z.value, c)
-	}
-
-	for x := 0; x < 2*n; x++ {
-		oldZ := z.value
-		b := z.subtractWithBorrow(x)
-		fmt.Printf("%d - %d --> %d, borrow: %d\n", oldZ, x, z.value, b)
-	}
-
-	t.Fatal()
 }
 
 func TestEuclidsCoeffs(t *testing.T) {

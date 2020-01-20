@@ -8,13 +8,26 @@ func newZInts(zs ...zInt) zInts {
 	return z
 }
 
-// zInt is an element of Zn = {0,1,...,n-1}.
+func (zs zInts) add(zints zInts) {
+	n := len(zs)
+	if n != len(zints) {
+		panic("")
+	}
+
+	var k int
+	for i := 0; i < n; i++ {
+		k = zs[i].addWithCarry(zints[i] + k)
+
+	}
+}
+
+// zInt is an element of Zn = {0, 1, ..., n-1}.
 type zInt struct {
 	value, modulus int
 }
 
 func newZInt(value, modulus int) zInt {
-	if value < 0 || modulus < 1 {
+	if modulus == 0 {
 		panic("argument out of range")
 	}
 
@@ -22,31 +35,31 @@ func newZInt(value, modulus int) zInt {
 }
 
 func (z *zInt) addWithCarry(x int) int {
-	v, carry := addWithCarry(z.value, x, z.modulus)
+	v, k := addWithCarry(z.value, x, z.modulus)
 	z.value = v
-	return carry
+	return k
 }
 
 func (z *zInt) subtractWithBorrow(x int) int {
-	v, borrow := subtractWithBorrow(z.value, x, z.modulus)
+	v, k := subtractWithBorrow(z.value, x, z.modulus)
 	z.value = v
-	return borrow
+	return k
 }
 
-// Zn = {0,1,...,n-1}
+// Zn = {0, 1, ..., n-1},  n > 0
+//    = {n+1, ..., -1, 0}, n < 0 (my extension to the definition)
 
-// Addition modulo n: x mod n = r such that x = qn + r for some
-// integer q and r in [0,n). r = x % n and q = [x/n].
+// Addition modulo n: x mod n = r such that x = kn + r for some
+// integer k and r in [0,n). r = x % n and k = [x/n].
 
-// The values "carry" and "borrow" refer to q and are useful in
+// The values "carry" and "borrow" refer to k and are useful in
 // addition and subtraction over the external direct product of
-// several sets of Zn. That is, to compute 11-02 over Z3^2, 1-2 is
-// computed over Z3 borrowing 1 from the left-most 1, then 0-0 is
-// computed as simply 0 resulting in 11-02 --> 04-02 = 02. If that
-// isn't clear, then see J.A. Gallian's Contemporary Abstract
+// several sets of Zn. See J.A. Gallian's Contemporary Abstract
 // Algebra, 6th Ed., chapters 1, 2, and 8.
 
-// addWithCarry returns (a+b) mod (modulus) with the carried amount.
+// A possible property: if x >= 0 and n > 0, then x mod -n = -(-x mod n).
+
+// addWithCarry returns (a+b) mod n with the carried amount.
 func addWithCarry(a, b, modulus int) (int, int) {
 	var (
 		ka, ra = euclidsCoeffs(a, modulus)
@@ -65,9 +78,12 @@ func subtractWithBorrow(a, b, modulus int) (int, int) {
 		k, r   = euclidsCoeffs(ra-rb, modulus)
 	)
 
-	return r, -k - ka - kb
+	return r, -ka + kb - k
 }
 
+// euclidsCoeffs returns (k,r) such that x = kn + r for a given
+// modulus n != 0. If n > 0, then 0 <= r < n. Otherwise, n < r <= 0.
+// In either case, k = (x-r)/n.
 func euclidsCoeffs(x, modulus int) (k int, r int) {
 	if modulus == 0 {
 		panic("")
