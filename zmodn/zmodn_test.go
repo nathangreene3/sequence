@@ -1,12 +1,11 @@
 package zmodn
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/nathangreene3/math"
 )
-
-func TestZIntAddWithCarry(t *testing.T) {
-
-}
 
 func TestAddSubtract(t *testing.T) {
 	tests := []struct {
@@ -279,4 +278,11 @@ func TestEuclidsCoeffs(t *testing.T) {
 			t.Fatalf("\ngiven (%d,%d)\nexpected (%d,%d)\nreceived (%d,%d)\n", test.x, test.n, test.k, test.r, k, r)
 		}
 	}
+}
+
+func TestBase(t *testing.T) {
+	fmt.Println(math.Base(16, 3))
+	fmt.Println(math.Base(8, 3))
+	fmt.Println(math.Base(24, 3))
+	t.Fatal()
 }
