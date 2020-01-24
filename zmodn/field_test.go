@@ -1,6 +1,8 @@
 package zmodn
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestField(t *testing.T) {
 	tests := []struct {
@@ -21,12 +23,13 @@ func TestField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		x, y := New(test.x, test.n), New(test.y, test.n)
-		z := Add(x, y)
-		rec := z.Int()
-		if test.exp != rec {
-			t.Fatalf(
-				"\nexpected (%d+%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
+		var (
+			x, y = New(test.x, test.n), New(test.y, test.n)
+			z    = x.Add(y)
+		)
+
+		if rec := z.Integer(); test.exp != rec {
+			t.Fatalf("\nexpected (%d+%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
 		}
 	}
 }
