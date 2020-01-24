@@ -43,23 +43,23 @@ func (x *Z) Add(y *Z) *Z {
 	switch {
 	case x.negative:
 		if !y.negative {
-			return Subtract(y, x.Abs())
+			return y.Subtract(x.Abs())
 		}
 
 		bothNegative = true
 	default:
 		if y.negative {
-			return Subtract(x, y.Abs())
+			return x.Subtract(y.Abs())
 		}
 	}
 
 	var (
-		z          = New(0, n)
-		xLen, yLen = len(x.value), len(y.value)
-		minLen     = math.MinInt(xLen, yLen)
+		z              = New(0, n)
+		xLen, yLen     = len(x.value), len(y.value)
+		minLen         = math.MinInt(xLen, yLen)
+		v0, v1, k0, k1 int
 	)
 
-	var v0, v1, k0, k1 int
 	for i := 0; i < minLen; i++ {
 		v0, k0 = addWithCarry(x.value[i], y.value[i], n)
 		v1, k1 = addWithCarry(v0, k1, n)
@@ -71,13 +71,15 @@ func (x *Z) Add(y *Z) *Z {
 	case xLen:
 		for i := minLen; i < yLen; i++ {
 			v1, k1 = addWithCarry(y.value[i], k1, n)
-			z.value = append(z.value, y.value[i])
+			z.value = append(z.value, v1)
 		}
 	case yLen:
 		for i := minLen; i < xLen; i++ {
 			v1, k1 = addWithCarry(x.value[i], k1, n)
 			z.value = append(z.value, v1)
 		}
+	default:
+		panic("")
 	}
 
 	z.negative = bothNegative
@@ -159,11 +161,12 @@ func (x *Z) Copy() *Z {
 
 // Integer ...
 func (x *Z) Integer() int {
+	n := math.Base10(x.value, x.modulus)
 	if x.negative {
-		return -math.Base10(x.value, x.modulus)
+		return -n
 	}
 
-	return math.Base10(x.value, x.modulus)
+	return n
 }
 
 // Negate ...
@@ -182,17 +185,21 @@ func (x *Z) normalize() {
 }
 
 // Subtract ...
-func Subtract(x, y *Z) *Z {
+func (x *Z) Subtract(y *Z) *Z {
 	n := x.modulus
 	if n != y.modulus {
 		panic("")
+	}
+
+	if 0 < x.Compare(y) {
+		x, y = y, x
 	}
 
 	var bothNegative bool
 	switch {
 	case x.negative:
 		if !y.negative {
-			return Subtract(y, x.Abs())
+			return y.Subtract(x.Abs())
 		}
 
 		bothNegative = true
@@ -202,8 +209,30 @@ func Subtract(x, y *Z) *Z {
 		}
 	}
 
-	z := New(0, n)
-	// TODO
+	var (
+		z              = New(0, n)
+		xLen, yLen     = len(x.value), len(y.value)
+		minLen         = math.MinInt(xLen, yLen)
+		v0, v1, k0, k1 int
+	)
+
+	for i := 0; i < minLen; i++ {
+		v0, k0 = subtractWithBorrow(x.value[i], y.value[i], n)
+		v1, k1 = subtractWithBorrow(v0, k1, n)
+		z.value = append(z.value, v1)
+		k1 += k0
+	}
+
+	switch minLen {
+	case xLen:
+		for i := minLen; i < yLen; i++ {
+
+		}
+	case yLen:
+		for i := minLen; i < xLen; i++ {
+
+		}
+	}
 
 	z.negative = bothNegative
 	z.clean()
