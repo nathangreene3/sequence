@@ -1,6 +1,9 @@
 package zmodn
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/nathangreene3/math"
 )
 
@@ -39,14 +42,11 @@ func (x *Z) Add(y *Z) *Z {
 		panic("")
 	}
 
-	var bothNegative bool
 	switch {
 	case x.negative:
 		if !y.negative {
 			return y.Subtract(x.Abs())
 		}
-
-		bothNegative = true
 	default:
 		if y.negative {
 			return x.Subtract(y.Abs())
@@ -78,11 +78,9 @@ func (x *Z) Add(y *Z) *Z {
 			v1, k1 = addWithCarry(x.value[i], k1, n)
 			z.value = append(z.value, v1)
 		}
-	default:
-		panic("")
 	}
 
-	z.negative = bothNegative
+	z.negative = x.negative && y.negative
 	z.clean()
 	return z
 }
@@ -95,56 +93,15 @@ func (x *Z) clean() {
 
 // Compare ...
 func (x *Z) Compare(y *Z) int {
-	var bothNegative bool
+	xInt, yInt := x.Integer(), y.Integer()
 	switch {
-	case x.negative:
-		if !y.negative {
-			return 1
-		}
-		bothNegative = true
-	case y.negative:
+	case xInt < yInt:
 		return -1
+	case yInt < xInt:
+		return 1
+	default:
+		return 0
 	}
-
-	xLen, yLen := len(x.value), len(y.value)
-	if xLen < yLen {
-		for i := yLen - 1; xLen <= i; i-- {
-			if y.value[i] != 0 {
-				if bothNegative {
-					return -1
-				}
-				return 1
-			}
-		}
-	}
-
-	if yLen < xLen {
-		for i := xLen - 1; yLen <= i; i-- {
-			if x.value[i] != 0 {
-				if bothNegative {
-					return 1
-				}
-				return -1
-			}
-		}
-	}
-
-	for i := math.MinInt(xLen, yLen) - 1; 0 <= i; i-- {
-		switch {
-		case x.value[i] < y.value[i]:
-			if bothNegative {
-				return 1
-			}
-			return -1
-		case y.value[i] < x.value[i]:
-			if bothNegative {
-				return -1
-			}
-			return 1
-		}
-	}
-
-	return 0
 }
 
 // Copy ...
@@ -163,10 +120,35 @@ func (x *Z) Copy() *Z {
 func (x *Z) Integer() int {
 	n := math.Base10(x.value, x.modulus)
 	if x.negative {
-		return -n
+		n *= -1
 	}
 
 	return n
+}
+
+// IsEven ...
+func (x *Z) IsEven() bool {
+	return len(x.value) == 0 || x.value[0]%2 == 0
+}
+
+// IsNegative ...
+func (x *Z) IsNegative() bool {
+	return x.negative
+}
+
+// IsOdd ...
+func (x *Z) IsOdd() bool {
+	return len(x.value) != 0 && x.value[0]%2 != 0
+}
+
+// IsPositive ...
+func (x *Z) IsPositive() bool {
+	return !x.negative
+}
+
+// IsZero ...
+func (x *Z) IsZero() bool {
+	return x.Integer() == 0
 }
 
 // Negate ...
@@ -184,6 +166,30 @@ func (x *Z) normalize() {
 	}
 }
 
+func (x *Z) String() string {
+	if len(x.value) == 0 {
+		return "(0) base (" + strconv.Itoa(x.modulus) + ")"
+	}
+
+	var (
+		n = len(x.value)
+		b strings.Builder
+	)
+
+	if x.negative {
+		b.WriteByte('-')
+	}
+
+	b.WriteString("(" + strconv.Itoa(x.value[n-1]))
+	for i := n - 2; 0 <= i; i-- {
+		b.WriteString("," + strconv.Itoa(x.value[i]))
+	}
+
+	b.WriteString(") (base " + strconv.Itoa(x.modulus) + ")")
+
+	return b.String()
+}
+
 // Subtract ...
 func (x *Z) Subtract(y *Z) *Z {
 	n := x.modulus
@@ -191,22 +197,21 @@ func (x *Z) Subtract(y *Z) *Z {
 		panic("")
 	}
 
-	if 0 < x.Compare(y) {
-		x, y = y, x
-	}
-
-	var bothNegative bool
 	switch {
 	case x.negative:
 		if !y.negative {
-			return y.Subtract(x.Abs())
+			return y.Add(x.Abs())
 		}
-
-		bothNegative = true
 	default:
 		if y.negative {
 			return x.Add(y.Abs())
 		}
+	}
+
+	var isNegative bool
+	if x.Compare(y) < 0 {
+		x, y = y, x
+		isNegative = true
 	}
 
 	var (
@@ -217,8 +222,8 @@ func (x *Z) Subtract(y *Z) *Z {
 	)
 
 	for i := 0; i < minLen; i++ {
-		v0, k0 = subtractWithBorrow(x.value[i], y.value[i], n)
-		v1, k1 = subtractWithBorrow(v0, k1, n)
+		v0, k0 = subtractWithBorrow(x.value[i], k1, n)
+		v1, k1 = subtractWithBorrow(v0, y.value[i], n)
 		z.value = append(z.value, v1)
 		k1 += k0
 	}
@@ -226,15 +231,18 @@ func (x *Z) Subtract(y *Z) *Z {
 	switch minLen {
 	case xLen:
 		for i := minLen; i < yLen; i++ {
-
+			v1, k1 = subtractWithBorrow(y.value[i], k1, n)
+			z.value = append(z.value, v1)
 		}
 	case yLen:
+		// Should always be this case...
 		for i := minLen; i < xLen; i++ {
-
+			v1, k1 = subtractWithBorrow(x.value[i], k1, n)
+			z.value = append(z.value, v1)
 		}
 	}
 
-	z.negative = bothNegative
+	z.negative = isNegative || (x.negative && y.negative)
 	z.clean()
 	return z
 }

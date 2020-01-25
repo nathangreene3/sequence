@@ -280,9 +280,10 @@ func TestEuclidsCoeffs(t *testing.T) {
 	}
 }
 
-func TestBase(t *testing.T) {
-	fmt.Println(math.Base(16, 3))
-	fmt.Println(math.Base(8, 3))
-	fmt.Println(math.Base(24, 3))
+func TestSubtract(t *testing.T) {
+	n := 3
+	x, y := math.Base(16, n), math.Base(8, n) // 121 - 22 = 22
+	z, k := subtractWithBorrow(x[0], y[0], n) // 1-2 = 2, borrow 1
+	fmt.Println(z, k)
 	t.Fatal()
 }
