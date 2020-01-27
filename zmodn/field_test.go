@@ -68,14 +68,14 @@ func TestField(t *testing.T) {
 	for _, test := range tests {
 		x, y := New(test.x, test.n), New(test.y, test.n)
 		if test.subtract {
-			z := x.Subtract(y)
+			z := Subtract(x, y)
 			if rec := z.Integer(); test.exp != rec {
 				t.Errorf("\nexpected (%d-%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
 			}
 			continue
 		}
 
-		z := x.Add(y)
+		z := Add(x, y)
 		if rec := z.Integer(); test.exp != rec {
 			t.Errorf("\nexpected (%d+%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
 		}

@@ -23,6 +23,11 @@ func New(value int, modulus int) *Z {
 	return &Z{value: math.Base(value, modulus), modulus: modulus}
 }
 
+// One ...
+func One(modulus int) *Z {
+	return New(1, modulus)
+}
+
 // Zero ...
 func Zero(modulus int) *Z {
 	return New(0, modulus)
@@ -35,8 +40,8 @@ func (x *Z) Abs() *Z {
 	return y
 }
 
-// Add ...
-func (x *Z) Add(y *Z) *Z {
+// Add y to x.
+func (x *Z) Add(y *Z) {
 	n := x.modulus
 	if n != y.modulus {
 		panic("")
@@ -45,11 +50,62 @@ func (x *Z) Add(y *Z) *Z {
 	switch {
 	case x.negative:
 		if !y.negative {
-			return y.Subtract(x.Abs())
+			x.Subtract(y)
+			return
 		}
 	default:
 		if y.negative {
-			return x.Subtract(y.Abs())
+			// return Subtract(x, y.Abs())
+			x.Subtract(y)
+			return
+		}
+	}
+
+	var (
+		xLen, yLen     = len(x.value), len(y.value)
+		minLen         = math.MinInt(xLen, yLen)
+		v0, v1, k0, k1 int
+	)
+
+	for i := 0; i < minLen; i++ {
+		v0, k0 = addWithCarry(x.value[i], y.value[i], n)
+		v1, k1 = addWithCarry(v0, k1, n)
+		x.value[i] = v1
+		k1 += k0
+	}
+
+	switch minLen {
+	case xLen:
+		for i := minLen; i < yLen; i++ {
+			v1, k1 = addWithCarry(y.value[i], k1, n)
+			x.value[i] = v1
+		}
+	case yLen:
+		for i := minLen; i < xLen; i++ {
+			v1, k1 = addWithCarry(x.value[i], k1, n)
+			x.value[i] = v1
+		}
+	}
+
+	// x.negative = x.negative && y.negative
+	x.clean()
+}
+
+// Add ...
+func Add(x, y *Z) *Z {
+	n := x.modulus
+	if n != y.modulus {
+		panic("")
+	}
+
+	switch {
+	case x.negative:
+		if !y.negative {
+			return Subtract(y, x.Abs())
+		}
+	default:
+		if y.negative {
+			return Subtract(x, y.Abs())
 		}
 	}
 
@@ -151,6 +207,29 @@ func (x *Z) IsZero() bool {
 	return x.Integer() == 0
 }
 
+// Mulitply ...
+func (x *Z) Mulitply(y *Z) *Z {
+	var (
+		yInt       = y.Integer()
+		isNegative = yInt < 0
+	)
+
+	if isNegative {
+		yInt *= -1
+	}
+
+	z := x.Copy()
+	for ; 1 < yInt; yInt-- {
+		z = Add(z, x)
+	}
+
+	if isNegative {
+		z = z.Negate()
+	}
+
+	return z
+}
+
 // Negate ...
 func (x *Z) Negate() *Z {
 	y := x.Copy()
@@ -190,8 +269,8 @@ func (x *Z) String() string {
 	return b.String()
 }
 
-// Subtract ...
-func (x *Z) Subtract(y *Z) *Z {
+// Subtract y from x.
+func (x *Z) Subtract(y *Z) {
 	n := x.modulus
 	if n != y.modulus {
 		panic("")
@@ -200,11 +279,66 @@ func (x *Z) Subtract(y *Z) *Z {
 	switch {
 	case x.negative:
 		if !y.negative {
-			return y.Add(x.Abs())
+			return Add(y, x.Abs())
 		}
 	default:
 		if y.negative {
-			return x.Add(y.Abs())
+			return Add(x, y.Abs())
+		}
+	}
+
+	var isNegative bool
+	if x.Compare(y) < 0 {
+		x, y = y, x
+		isNegative = true
+	}
+
+	var (
+		xLen, yLen     = len(x.value), len(y.value)
+		minLen         = math.MinInt(xLen, yLen)
+		v0, v1, k0, k1 int
+	)
+
+	for i := 0; i < minLen; i++ {
+		v0, k0 = subtractWithBorrow(x.value[i], k1, n)
+		v1, k1 = subtractWithBorrow(v0, y.value[i], n)
+		x.value[i] = v1
+		k1 += k0
+	}
+
+	switch minLen {
+	case xLen:
+		for i := minLen; i < yLen; i++ {
+			v1, k1 = subtractWithBorrow(y.value[i], k1, n)
+			x.value[i] = v1
+		}
+	case yLen:
+		// Should always be this case...
+		for i := minLen; i < xLen; i++ {
+			v1, k1 = subtractWithBorrow(x.value[i], k1, n)
+			x.value[i] = v1
+		}
+	}
+
+	x.negative = isNegative || (x.negative && y.negative)
+	x.clean()
+}
+
+// Subtract ...
+func Subtract(x, y *Z) *Z {
+	n := x.modulus
+	if n != y.modulus {
+		panic("")
+	}
+
+	switch {
+	case x.negative:
+		if !y.negative {
+			return Add(y, x.Abs())
+		}
+	default:
+		if y.negative {
+			return Add(x, y.Abs())
 		}
 	}
 
