@@ -279,11 +279,11 @@ func (x *Z) Subtract(y *Z) {
 	switch {
 	case x.negative:
 		if !y.negative {
-			return Add(y, x.Abs())
+			// return Add(y, x.Abs())
 		}
 	default:
 		if y.negative {
-			return Add(x, y.Abs())
+			// return Add(x, y.Abs())
 		}
 	}
 

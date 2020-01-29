@@ -2,6 +2,8 @@ package zmodn
 
 import (
 	"testing"
+
+	math "github.com/nathangreene3/math"
 )
 
 func TestField(t *testing.T) {
@@ -80,4 +82,38 @@ func TestField(t *testing.T) {
 			t.Errorf("\nexpected (%d+%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
 		}
 	}
+}
+
+type incrementor func(n int) int
+type decrementor func(n int) int
+
+func newIncDec(base int, incOrd []int) (incrementor, decrementor) {
+	if base < 2 {
+		panic("")
+	}
+
+	var (
+		n        = len(incOrd)
+		p        = 1
+		basePows = math.BasePows(n, base)
+	)
+
+	var (
+		c int
+		f = func(n int) int {
+			c++
+			return 0
+		}
+
+		g = func(n int) int {
+			c--
+			return 0
+		}
+	)
+
+	return f, g
+}
+
+func TestNewIncDec(t *testing.T) {
+
 }
