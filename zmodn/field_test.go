@@ -2,8 +2,6 @@ package zmodn
 
 import (
 	"testing"
-
-	math "github.com/nathangreene3/math"
 )
 
 func TestField(t *testing.T) {
@@ -74,17 +72,19 @@ func TestField(t *testing.T) {
 			if rec := z.Integer(); test.exp != rec {
 				t.Errorf("\nexpected (%d-%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
 			}
-			continue
-		}
-
-		z := Add(x, y)
-		if rec := z.Integer(); test.exp != rec {
-			t.Errorf("\nexpected (%d+%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
+		} else {
+			z := Add(x, y)
+			if rec := z.Integer(); test.exp != rec {
+				t.Errorf("\nexpected (%d+%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
+			}
 		}
 	}
 }
 
+// incrementor is a function that increments n according to the index queue.
 type incrementor func(n int) int
+
+// decrementor is a function that decrements n according to the index queue.
 type decrementor func(n int) int
 
 func newIncDec(base int, incOrd []int) (incrementor, decrementor) {
@@ -93,9 +93,9 @@ func newIncDec(base int, incOrd []int) (incrementor, decrementor) {
 	}
 
 	var (
-		n        = len(incOrd)
-		p        = 1
-		basePows = math.BasePows(n, base)
+	// n = len(incOrd)
+	// p        = 1
+	// basePows = math.BasePows(n, base)
 	)
 
 	var (

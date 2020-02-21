@@ -23,12 +23,12 @@ func New(value int, modulus int) *Z {
 	return &Z{value: math.Base(value, modulus), modulus: modulus}
 }
 
-// One ...
+// One is equivalent to New(1,n).
 func One(modulus int) *Z {
 	return New(1, modulus)
 }
 
-// Zero ...
+// Zero is equivalent to New(0,n).
 func Zero(modulus int) *Z {
 	return New(0, modulus)
 }
@@ -40,8 +40,8 @@ func (x *Z) Abs() *Z {
 	return y
 }
 
-// Add y to x.
-func (x *Z) Add(y *Z) {
+// Add y to x. Returns x.
+func (x *Z) Add(y *Z) *Z {
 	n := x.modulus
 	if n != y.modulus {
 		panic("")
@@ -50,14 +50,11 @@ func (x *Z) Add(y *Z) {
 	switch {
 	case x.negative:
 		if !y.negative {
-			x.Subtract(y)
-			return
+			return x.Subtract(y)
 		}
 	default:
 		if y.negative {
-			// return Subtract(x, y.Abs())
-			x.Subtract(y)
-			return
+			return x.Subtract(y)
 		}
 	}
 
@@ -88,7 +85,7 @@ func (x *Z) Add(y *Z) {
 	}
 
 	// x.negative = x.negative && y.negative
-	x.clean()
+	return x.trim().normalize()
 }
 
 // Add ...
@@ -109,46 +106,49 @@ func Add(x, y *Z) *Z {
 		}
 	}
 
-	var (
-		z              = New(0, n)
-		xLen, yLen     = len(x.value), len(y.value)
-		minLen         = math.MinInt(xLen, yLen)
-		v0, v1, k0, k1 int
-	)
+	/*
+		var (
+			z              = New(0, n)
+			xLen, yLen     = len(x.value), len(y.value)
+			minLen         = math.MinInt(xLen, yLen)
+			v0, v1, k0, k1 int
+		)
 
-	for i := 0; i < minLen; i++ {
-		v0, k0 = addWithCarry(x.value[i], y.value[i], n)
-		v1, k1 = addWithCarry(v0, k1, n)
-		z.value = append(z.value, v1)
-		k1 += k0
-	}
-
-	switch minLen {
-	case xLen:
-		for i := minLen; i < yLen; i++ {
-			v1, k1 = addWithCarry(y.value[i], k1, n)
+		for i := 0; i < minLen; i++ {
+			v0, k0 = addWithCarry(x.value[i], y.value[i], n)
+			v1, k1 = addWithCarry(v0, k1, n)
 			z.value = append(z.value, v1)
+			k1 += k0
 		}
-	case yLen:
-		for i := minLen; i < xLen; i++ {
-			v1, k1 = addWithCarry(x.value[i], k1, n)
-			z.value = append(z.value, v1)
-		}
-	}
 
-	z.negative = x.negative && y.negative
-	z.clean()
-	return z
+		switch minLen {
+		case xLen:
+			for i := minLen; i < yLen; i++ {
+				v1, k1 = addWithCarry(y.value[i], k1, n)
+				z.value = append(z.value, v1)
+			}
+		case yLen:
+			for i := minLen; i < xLen; i++ {
+				v1, k1 = addWithCarry(x.value[i], k1, n)
+				z.value = append(z.value, v1)
+			}
+		}
+
+		z.negative = x.negative && y.negative
+		return z.clean()
+	*/
+
+	return x.Copy().Add(y)
 }
 
-// clean ...
-func (x *Z) clean() {
-	x.trim()
-	x.normalize()
+// clean calls trim and normalize.
+func (x *Z) clean() *Z {
+	return x.trim().normalize()
 }
 
 // Compare ...
 func (x *Z) Compare(y *Z) int {
+	// The modulus makes comparison difficult, so compare on base-10 representation
 	xInt, yInt := x.Integer(), y.Integer()
 	switch {
 	case xInt < yInt:
@@ -172,7 +172,7 @@ func (x *Z) Copy() *Z {
 	return &cpy
 }
 
-// Integer ...
+// Integer returns the base-10 integer value.
 func (x *Z) Integer() int {
 	n := math.Base10(x.value, x.modulus)
 	if x.negative {
@@ -237,24 +237,23 @@ func (x *Z) Negate() *Z {
 	return y
 }
 
-// normalize ...
-func (x *Z) normalize() {
+// normalize each indexed value to Z[n], where n is the modulus.
+func (x *Z) normalize() *Z {
 	var k int
 	for i, v := range x.value {
 		x.value[i], k = addWithCarry(v, k, x.modulus)
 	}
+
+	return x
 }
 
 func (x *Z) String() string {
-	if len(x.value) == 0 {
+	n := len(x.value)
+	if n == 0 {
 		return "(0) base (" + strconv.Itoa(x.modulus) + ")"
 	}
 
-	var (
-		n = len(x.value)
-		b strings.Builder
-	)
-
+	var b strings.Builder
 	if x.negative {
 		b.WriteByte('-')
 	}
@@ -265,12 +264,11 @@ func (x *Z) String() string {
 	}
 
 	b.WriteString(") (base " + strconv.Itoa(x.modulus) + ")")
-
 	return b.String()
 }
 
 // Subtract y from x.
-func (x *Z) Subtract(y *Z) {
+func (x *Z) Subtract(y *Z) *Z {
 	n := x.modulus
 	if n != y.modulus {
 		panic("")
@@ -321,7 +319,7 @@ func (x *Z) Subtract(y *Z) {
 	}
 
 	x.negative = isNegative || (x.negative && y.negative)
-	x.clean()
+	return x.clean()
 }
 
 // Subtract ...
@@ -381,8 +379,8 @@ func Subtract(x, y *Z) *Z {
 	return z
 }
 
-// trim ...
-func (x *Z) trim() {
+// trim all leading zeroes.
+func (x *Z) trim() *Z {
 	var (
 		n = len(x.value)
 		c int
@@ -393,4 +391,5 @@ func (x *Z) trim() {
 	}
 
 	x.value = x.value[:n-c]
+	return x
 }

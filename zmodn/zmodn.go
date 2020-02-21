@@ -39,10 +39,6 @@ func subtractWithBorrow(a, b, modulus int) (int, int) {
 // modulus n != 0. If n > 0, then 0 <= r < n. Otherwise, n < r <= 0.
 // In either case, k = (x-r)/n.
 func euclidsCoeffs(x, modulus int) (k int, r int) {
-	if modulus == 0 {
-		panic("")
-	}
-
 	r = (x%modulus + modulus) % modulus
 	return (x - r) / modulus, r
 }
