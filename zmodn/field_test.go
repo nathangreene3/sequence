@@ -68,14 +68,90 @@ func TestField(t *testing.T) {
 	for _, test := range tests {
 		x, y := New(test.x, test.n), New(test.y, test.n)
 		if test.subtract {
-			z := Subtract(x, y)
+			z := x.Subtract(y)
 			if rec := z.Integer(); test.exp != rec {
 				t.Errorf("\nexpected (%d-%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
 			}
 		} else {
-			z := Add(x, y)
+			z := x.Add(y)
 			if rec := z.Integer(); test.exp != rec {
 				t.Errorf("\nexpected (%d+%d) mod %d = %d\nreceived %d\nx = %v\ny = %v\nz = %v\n", test.x, test.y, test.n, test.exp, rec, x, y, z)
+			}
+		}
+	}
+}
+
+func TestAddSubInt(t *testing.T) {
+	tests := []struct {
+		x, y, n, exp int
+		sub          bool
+	}{
+		{
+			x:   11,
+			y:   5,
+			n:   3,
+			exp: 16,
+		},
+		{
+			x:   11,
+			y:   -5,
+			n:   3,
+			exp: 6,
+		},
+		{
+			x:   -11,
+			y:   5,
+			n:   3,
+			exp: -6,
+		},
+		{
+			x:   11,
+			y:   5,
+			n:   3,
+			exp: 16,
+		},
+
+		// Subtract
+		{
+			x:   11,
+			y:   5,
+			n:   3,
+			exp: 6,
+			sub: true,
+		},
+		{
+			x:   11,
+			y:   -5,
+			n:   3,
+			exp: 16,
+			sub: true,
+		},
+		{
+			x:   -11,
+			y:   5,
+			n:   3,
+			exp: -16,
+			sub: true,
+		},
+		{
+			x:   11,
+			y:   5,
+			n:   3,
+			exp: 6,
+			sub: true,
+		},
+	}
+
+	for _, test := range tests {
+		if test.sub {
+			rec := New(test.x, test.n).subtractInt(test.y).Integer()
+			if test.exp != rec {
+				t.Fatalf("\nexpected %d\nreceived %d\n", test.exp, rec)
+			}
+		} else {
+			rec := New(test.x, test.n).addInt(test.y).Integer()
+			if test.exp != rec {
+				t.Fatalf("\nexpected %d\nreceived %d\n", test.exp, rec)
 			}
 		}
 	}

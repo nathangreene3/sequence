@@ -13,7 +13,8 @@ package zmodn
 
 // A possible property: if x >= 0 and n > 0, then x mod -n = -(-x mod n).
 
-// addWithCarry returns r = (a+b) mod n with the carried amount k such that a+b = kn+r.
+// addWithCarry returns r = (a+b) mod n with the carried amount k
+// such that a+b = kn+r for |r| < |n|.
 func addWithCarry(a, b, modulus int) (int, int) {
 	var (
 		ka, ra = euclidsCoeffs(a, modulus)
