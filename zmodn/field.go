@@ -152,12 +152,24 @@ func (x *Z) Negate() *Z {
 // normalize each indexed value to Z[n], where n is the modulus.
 func (x *Z) normalize() *Z {
 	var (
-		k int
-		n = len(x.value)
+		i, k int
+		n    = len(x.value)
 	)
 
-	for i := 0; i < n; i++ {
+	for ; i < n; i++ {
 		x.value[i], k = addWithCarry(x.value[i], k, x.modulus)
+	}
+
+	if i < n {
+		// Ran out of value before i iterated to n
+		x.value = x.value[:i]
+		return x
+	}
+
+	var v int
+	for k != 0 {
+		v, k = addWithCarry(k, 0, x.modulus)
+		x.value = append(x.value, v)
 	}
 
 	return x
