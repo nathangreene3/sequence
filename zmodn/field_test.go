@@ -146,12 +146,12 @@ func TestAddSubInt(t *testing.T) {
 		if test.sub {
 			rec := New(test.x, test.n).subtractInt(test.y).Integer()
 			if test.exp != rec {
-				t.Fatalf("\nexpected %d\nreceived %d\n", test.exp, rec)
+				t.Fatalf("\n%d - %d (mod %d)\nexpected %d\nreceived %d\n", test.x, test.y, test.n, test.exp, rec)
 			}
 		} else {
 			rec := New(test.x, test.n).addInt(test.y).Integer()
 			if test.exp != rec {
-				t.Fatalf("\nexpected %d\nreceived %d\n", test.exp, rec)
+				t.Fatalf("\n%d + %d (mod %d)\nexpected %d\nreceived %d\n", test.x, test.y, test.n, test.exp, rec)
 			}
 		}
 	}

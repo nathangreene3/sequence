@@ -168,7 +168,27 @@ func (x *Z) set(value int) *Z {
 		value *= -1
 	}
 
-	x.value = math.Base(value, x.modulus)
+	var (
+		i int
+		n = len(x.value)
+	)
+
+	for ; i < n && value != 0; i++ {
+		x.value[i], value = addWithCarry(value, 0, x.modulus)
+	}
+
+	if i < n {
+		// Ran out of value before i iterated to n
+		x.value = x.value[:i]
+		return x
+	}
+
+	var v int
+	for value != 0 {
+		v, value = addWithCarry(value, 0, x.modulus)
+		x.value = append(x.value, v)
+	}
+
 	return x
 }
 
