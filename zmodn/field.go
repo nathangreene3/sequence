@@ -23,18 +23,22 @@ func New(value int, modulus int) *Z {
 	return &Z{value: math.Base(value, modulus), modulus: modulus}
 }
 
+// Bin ...
 func Bin(value int) *Z {
 	return New(value, 2)
 }
 
+// Oct ...
 func Oct(value int) *Z {
 	return New(value, 8)
 }
 
+// Dec ...
 func Dec(value int) *Z {
 	return New(value, 10)
 }
 
+// Hex ...
 func Hex(value int) *Z {
 	return New(value, 16)
 }
@@ -56,8 +60,51 @@ func (x *Z) Abs() *Z {
 	return y
 }
 
+// Add y to x.
 func (x *Z) Add(y *Z) *Z {
-	return x.addInt(y.Integer())
+	n := x.modulus
+	if n != y.modulus {
+		panic("moduli do not match")
+	}
+
+	var (
+		xLen, yLen = len(x.value), len(y.value)
+		minLen     = math.MinInt(xLen, yLen)
+		v0, k0     int // x(i) + y(i) = k0*n + v0
+		v1, k1     int // v0 + k1 = k1*n + v1
+	)
+
+	if x.negative != y.negative {
+		// TODO: Handle sign of x before/after subtraction
+		for i := 0; i < minLen; i++ {
+			// TODO: Finish subtraction
+			v0, k0 = subtractWithBorrow(x.value[i], y.value[i], n)
+			// v1,k1=subtractWithBorrow()
+		}
+
+		return x.trim()
+	}
+
+	for i := 0; i < minLen; i++ {
+		v0, k0 = addWithCarry(x.value[i], y.value[i], n)
+		v1, k1 = addWithCarry(v0, k1, n)
+		x.value[i] = v1
+		k1 += k0
+	}
+
+	switch minLen {
+	case xLen:
+		for i := minLen; i < yLen; i++ {
+			v1, k1 = addWithCarry(y.value[i], k1, n)
+			x.value = append(x.value, v1)
+		}
+	case yLen:
+		for i := minLen; i < xLen && k1 != 0; i++ {
+			x.value[i], k1 = addWithCarry(x.value[i], k1, n)
+		}
+	}
+
+	return x.trim()
 }
 
 func (x *Z) addInt(y int) *Z {
@@ -71,15 +118,55 @@ func (x *Z) clean() *Z {
 
 // Compare ...
 func (x *Z) Compare(y *Z) int {
-	// The modulus makes comparison difficult, so compare on base-10 representation
-	xInt, yInt := x.Integer(), y.Integer()
 	switch {
-	case xInt < yInt:
+	case x.modulus != y.modulus:
+		panic("unequal moduli")
+	case x.negative:
+		if y.negative {
+			xLen, yLen := len(x.value), len(y.value)
+			switch {
+			case xLen < yLen:
+				return 1
+			case yLen < xLen:
+				return -1
+			default:
+				for i := 0; i < xLen; i++ {
+					switch {
+					case x.value[i] < y.value[i]:
+						return 1
+					case y.value[i] < x.value[i]:
+						return -1
+					}
+				}
+
+				return 0
+			}
+		}
+
 		return -1
-	case yInt < xInt:
-		return 1
 	default:
-		return 0
+		if y.negative {
+			return 1
+		}
+
+		xLen, yLen := len(x.value), len(y.value)
+		switch {
+		case xLen < yLen:
+			return -1
+		case yLen < xLen:
+			return 1
+		default:
+			for i := 0; i < xLen; i++ {
+				switch {
+				case x.value[i] < y.value[i]:
+					return -1
+				case y.value[i] < x.value[i]:
+					return 1
+				}
+			}
+
+			return 0
+		}
 	}
 }
 
@@ -100,6 +187,7 @@ func (x *Z) divideInt(y int) *Z {
 }
 
 // Integer returns the base-10 integer value.
+// TODO: removed.
 func (x *Z) Integer() int {
 	n := math.Base10(x.value, x.modulus)
 	if x.negative {
@@ -131,7 +219,7 @@ func (x *Z) IsPositive() bool {
 
 // IsZero ...
 func (x *Z) IsZero() bool {
-	return x.Integer() == 0
+	return len(x.value) == 0
 }
 
 // Mulitply ...
@@ -234,15 +322,15 @@ func (x *Z) subtractInt(y int) *Z {
 
 // trim all leading zeroes.
 func (x *Z) trim() *Z {
-	var (
-		n = len(x.value)
-		c int
-	)
-
+	n := len(x.value)
 	for i := n - 1; 0 <= i && x.value[i] == 0; i-- {
-		c++
+		n--
 	}
 
-	x.value = x.value[:n-c]
+	x.value = x.value[:n]
+	if n == 0 {
+		x.negative = false
+	}
+
 	return x
 }
