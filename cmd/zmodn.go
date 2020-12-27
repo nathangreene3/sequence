@@ -1,4 +1,4 @@
-package zmodn
+package main
 
 import "math"
 

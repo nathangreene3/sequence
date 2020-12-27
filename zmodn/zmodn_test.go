@@ -3,8 +3,6 @@ package zmodn
 import (
 	"fmt"
 	"testing"
-
-	"github.com/nathangreene3/math"
 )
 
 func TestAddSubtract(t *testing.T) {
@@ -79,12 +77,12 @@ func TestAddSubtract(t *testing.T) {
 
 	for _, test := range tests {
 		if test.subtract {
-			answer, borrow := subtractWithBorrow(test.x, test.y, test.n)
+			answer, borrow := subtractMod(test.x, test.y, test.n)
 			if test.answer != answer || test.borrow != borrow {
 				t.Fatalf("\n(%d - %d) mod %d\nexpected (%d,%d)\nreceived (%d,%d)\n", test.x, test.y, test.n, test.answer, test.borrow, answer, borrow)
 			}
 		} else {
-			answer, carry := addWithCarry(test.x, test.y, test.n)
+			answer, carry := addMod(test.x, test.y, test.n)
 			if test.answer != answer || test.carry != carry {
 				t.Fatalf("\n(%d + %d) mod %d\nexpected (%d,%d)\nreceived (%d,%d)\n", test.x, test.y, test.n, test.answer, test.carry, answer, carry)
 			}
@@ -94,196 +92,239 @@ func TestAddSubtract(t *testing.T) {
 
 func TestEuclidsCoeffs(t *testing.T) {
 	tests := []struct {
-		x, n, k, r int
+		x, n, expK, expR int
 	}{
-		// 0 < n
+		// -----------------
+		// Cases where 0 < n
+		// -----------------
 		{
-			// -6 =-2*3 + 0
-			x: -6,
-			n: 3,
-			k: -2,
-			r: 0,
+			// -6 = -2*3 + 0
+			x:    -6,
+			n:    3,
+			expK: -2,
+			expR: 0,
 		},
 		{
 			// -5 = -2*3 + 1
-			x: -5,
-			n: 3,
-			k: -2,
-			r: 1,
+			x:    -5,
+			n:    3,
+			expK: -2,
+			expR: 1,
 		},
 		{
 			// -4 = -2*3 + 2
-			x: -4,
-			n: 3,
-			k: -2,
-			r: 2,
+			x:    -4,
+			n:    3,
+			expK: -2,
+			expR: 2,
 		},
 		{
 			// -3 = -1*3 + 0
-			x: -3,
-			n: 3,
-			k: -1,
-			r: 0,
+			x:    -3,
+			n:    3,
+			expK: -1,
+			expR: 0,
 		},
 		{
 			// -2 = -1*3 + 1
-			x: -2,
-			n: 3,
-			k: -1,
-			r: 1,
+			x:    -2,
+			n:    3,
+			expK: -1,
+			expR: 1,
 		},
 		{
 			// -1 = -1*3 + 2
-			x: -1,
-			n: 3,
-			k: -1,
-			r: 2,
+			x:    -1,
+			n:    3,
+			expK: -1,
+			expR: 2,
 		},
 		{
 			// 0 = 0*3 + 0
-			x: 0,
-			n: 3,
-			k: 0,
-			r: 0,
+			x:    0,
+			n:    3,
+			expK: 0,
+			expR: 0,
 		},
 		{
 			// 1 = 0*3 + 1
-			x: 1,
-			n: 3,
-			k: 0,
-			r: 1,
+			x:    1,
+			n:    3,
+			expK: 0,
+			expR: 1,
 		},
 		{
 			// 2 = 0*3 + 2
-			x: 2,
-			n: 3,
-			k: 0,
-			r: 2,
+			x:    2,
+			n:    3,
+			expK: 0,
+			expR: 2,
 		},
 		{
 			// 3 = 1*3 + 0
-			x: 3,
-			n: 3,
-			k: 1,
-			r: 0,
+			x:    3,
+			n:    3,
+			expK: 1,
+			expR: 0,
 		},
 		{
 			// 4 = 1*3 + 1
-			x: 4,
-			n: 3,
-			k: 1,
-			r: 1,
+			x:    4,
+			n:    3,
+			expK: 1,
+			expR: 1,
 		},
 		{
 			// 5 = 1*3 + 2
-			x: 5,
-			n: 3,
-			k: 1,
-			r: 2,
+			x:    5,
+			n:    3,
+			expK: 1,
+			expR: 2,
 		},
 		{
 			// 6 = 2*3 + 0
-			x: 6,
-			n: 3,
-			k: 2,
-			r: 0,
+			x:    6,
+			n:    3,
+			expK: 2,
+			expR: 0,
 		},
 
-		// n < 0
+		// -----------------
+		// Cases where n < 0
+		// -----------------
 		{
 			// -6 = 2*-3 - 0
-			x: -6,
-			n: -3,
-			k: 2,
-			r: 0,
+			x:    -6,
+			n:    -3,
+			expK: 2,
+			expR: 0,
 		},
 		{
 			// -5 = 1*-3 - 2
-			x: -5,
-			n: -3,
-			k: 1,
-			r: -2,
+			x:    -5,
+			n:    -3,
+			expK: 1,
+			expR: -2,
 		},
 		{
-			x: -4,
-			n: -3,
-			k: 1,
-			r: -1,
+			// -4 = 1*-3 - 1
+			x:    -4,
+			n:    -3,
+			expK: 1,
+			expR: -1,
 		},
 		{
-			x: -3,
-			n: -3,
-			k: 1,
-			r: 0,
+			// -3 = 1*-3 + 0
+			x:    -3,
+			n:    -3,
+			expK: 1,
+			expR: 0,
 		},
 		{
-			x: -2,
-			n: -3,
-			k: 0,
-			r: -2,
+			// -2 = 0*-3 - 2
+			x:    -2,
+			n:    -3,
+			expK: 0,
+			expR: -2,
 		},
 		{
-			x: -1,
-			n: -3,
-			k: 0,
-			r: -1,
+			// -1 = 0*-3 - 1
+			x:    -1,
+			n:    -3,
+			expK: 0,
+			expR: -1,
 		},
 		{
-			x: 0,
-			n: -3,
-			k: 0,
-			r: 0,
+			// 0 = 0*-3 + 0
+			x:    0,
+			n:    -3,
+			expK: 0,
+			expR: 0,
 		},
 		{
-			x: 1,
-			n: -3,
-			k: -1,
-			r: -2,
+			// 1 = -1*-3 - 2
+			x:    1,
+			n:    -3,
+			expK: -1,
+			expR: -2,
 		},
 		{
-			x: 2,
-			n: -3,
-			k: -1,
-			r: -1,
+			// 2 = -1*-3 - 1
+			x:    2,
+			n:    -3,
+			expK: -1,
+			expR: -1,
 		},
 		{
-			x: 3,
-			n: -3,
-			k: -1,
-			r: 0,
+			// 3 = -1*-3 + 0
+			x:    3,
+			n:    -3,
+			expK: -1,
+			expR: 0,
 		},
 		{
-			x: 4,
-			n: -3,
-			k: -2,
-			r: -2,
+			// 4 = -2*-3 - 2
+			x:    4,
+			n:    -3,
+			expK: -2,
+			expR: -2,
 		},
 		{
-			x: 5,
-			n: -3,
-			k: -2,
-			r: -1,
+			// 5 = -2*-3 -1
+			x:    5,
+			n:    -3,
+			expK: -2,
+			expR: -1,
 		},
 		{
-			x: 6,
-			n: -3,
-			k: -2,
-			r: 0,
+			// 6 = -2*-3 + 0
+			x:    6,
+			n:    -3,
+			expK: -2,
+			expR: 0,
 		},
 	}
 
 	for _, test := range tests {
-		k, r := euclidsCoeffs(test.x, test.n)
-		if test.k != k || test.r != r {
-			t.Fatalf("\ngiven (%d,%d)\nexpected (%d,%d)\nreceived (%d,%d)\n", test.x, test.n, test.k, test.r, k, r)
+		k, r := EuclidFloor(test.x, test.n)
+		if test.expK != k || test.expR != r {
+			t.Fatalf("\nexpected euclid(%d,%d) => (%d,%d)\nreceived (%d,%d)\n", test.x, test.n, test.expK, test.expR, k, r)
 		}
 	}
 }
 
-func TestSubtract(t *testing.T) {
-	n := 3
-	x, y := math.Base(16, n), math.Base(8, n) // 121 - 22 = 22
-	z, k := subtractWithBorrow(x[0], y[0], n) // 1-2 = 2, borrow 1
-	fmt.Println(z, k)
-	t.Fatal()
+func TestEuclid2(t *testing.T) {
+	// x, n := 7, -3
+	// t.Error(euclidFloor(x, n))
+	// t.Error(euclidTrunc(x, n))
+	// t.Error(euclid(x, n))
+}
+
+func BenchmarkEuclidFloor(b *testing.B) {
+	var a, n int = 1 << 62, 3
+	for i := 0; i < b.N; i++ {
+		benchmarkEuclidFloor(b, a, n)
+	}
+
+	for i := 0; i < b.N; i++ {
+		benchmarkEuclidFloor(b, -a, n)
+	}
+
+	for i := 0; i < b.N; i++ {
+		benchmarkEuclidFloor(b, a, -n)
+	}
+
+	for i := 0; i < b.N; i++ {
+		benchmarkEuclidFloor(b, -a, -n)
+	}
+}
+
+func benchmarkEuclidFloor(b *testing.B, a, n int) bool {
+	f := func(b0 *testing.B) {
+		for i := 0; i < b0.N; i++ {
+			_, _ = EuclidFloor(a, n)
+		}
+	}
+
+	return b.Run(fmt.Sprintf("euclidFloor(%d,%d)", a, n), f)
 }
